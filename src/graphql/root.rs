@@ -27,15 +27,21 @@ impl Query{
     #[graphql(name="finduser")]
     fn detail_user(context:&RootContext,id_user:String)->FieldResult<Option<User>>{
         use crate::schema::users::dsl::*;
-        let uuid_user = Uuid::parse_str(&id_user).expect("cannot parsed");
-        let mut conn:&PgConnection = &context.dbpool.get().unwrap();
-        match users.find(uuid_user).get_result::<User>(conn){
-            Ok(user)=>Ok(Some(user)),
-            Err(e)=>match e{
-                diesel::result::Error::NotFound => FieldResult::Ok(None),
-                _ => FieldResult::Err(FieldError::from(e))
+        let uuid_user = Uuid::parse_str(&id_user);
+        match uuid_user{
+            Ok(uuidUser)=>{
+                let mut conn:&PgConnection = &context.dbpool.get().unwrap();
+                match users.find(uuidUser).get_result::<User>(conn){
+                    Ok(user)=>Ok(Some(user)),
+                    Err(e)=>match e{
+                        diesel::result::Error::NotFound => FieldResult::Ok(None),
+                        _ => FieldResult::Err(FieldError::from(e))
+                    }
+                }
             }
+            Err(e)=> {FieldResult::Err(FieldError::from(e))}
         }
+
     }
     #[graphql(name="listProduct")]
     fn list_product(context:&RootContext)->FieldResult<Vec<Product>>{
